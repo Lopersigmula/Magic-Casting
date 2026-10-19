@@ -132,3 +132,10 @@ html.mc-lock { overflow: hidden !important; overscroll-behavior: none; }
 #mc-panel[data-anim="reduced"] .mc-primary, #mc-panel[data-anim="reduced"] .mc-title { box-shadow: none; text-shadow: none; }
 @media (prefers-reduced-motion: reduce) { #mc-panel *, #mc-toast { transition: none !important; animation: none !important; } }
 @media (max-height: 560px) { .mc-r-title { font-size: 22px; } .mc-msg { min-height: 1.6em; } }
+
+/* ---------- Аура (1.3) ---------- */
+#mc-panel { --mc-a1: #5ee7ff; --mc-a2: #a78bfa; --mc-a3: #f0abfc; }
+.mc-aura-chip { font-size: 13px; transition: color .3s, border-color .3s; }
+.mc-view[data-view="game"] .mc-bar i { background: linear-gradient(90deg, var(--mc-a1), var(--mc-a2), var(--mc-a3)); box-shadow: 0 0 10px var(--mc-a1); }
+.mc-view[data-view="game"] .mc-stage { border-color: color-mix(in srgb, var(--mc-a1) 35%, transparent); box-shadow: inset 0 0 28px color-mix(in srgb, var(--mc-a2) 22%, transparent), 0 0 18px color-mix(in srgb, var(--mc-a1) 18%, transparent); }
+#mc-panel[data-anim="off"] .mc-stage { box-shadow: none !important; }
