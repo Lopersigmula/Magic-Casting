@@ -20,6 +20,8 @@ export const DEFAULTS = {
     addNote: true,
     includeSpell: true,
     sound: true,
+    soundVolume: 0.7,
+    shake: true,                // дрожание в конце символа
     animations: 'full',         // full | reduced | off
     offline: false,
     autoAnalyze: true,

@@ -9,7 +9,10 @@ function systemPrompt() {
         'You rate the difficulty of a spell for a finger-drawing minigame in a roleplay.',
         'Judge the effect, scale, precision required and implied magical power.',
         'Reply with ONE JSON object and nothing else (no markdown, no comments):',
-        '{"spell_name":string,"difficulty":1-5,"symbol_count":1-6,"symbols":[ids],"time_limit":seconds,"allowed_mistakes":0-8,"drawing_tolerance":0.08-0.35,"trace_speed":0.5-2,"complexity_reason":string}',
+        '{"spell_name":string,"difficulty":1-5,"symbol_count":1-6,"symbols":[ids],"time_limit":seconds,"allowed_mistakes":0-8,"drawing_tolerance":0.08-0.35,"trace_speed":0.5-2,"complexity_reason":string,"aura":{"element":"fire|ice|water|lightning|earth|wind|light|dark|nature|blood|arcane","colors":["#rrggbb","#rrggbb","#rrggbb"],"particle":"spark|ember|mist|snow|leaf|rune|bubble|star|shard","energy":0-1,"turbulence":0-1,"smudge":0-1}}',
+        'The aura is the visible magical smoke of the spell: the caster\'s finger will smear it while drawing.',
+        'Pick 3 vivid colors that fit the spell (bright enough to glow on a dark background), the particle type that fits its nature,',
+        'energy = how intense/powerful it feels, turbulence = how chaotic/violent the motion is, smudge = how easily it smears (smoke/mist high, solid earth/ice low).',
         'Scale: 1 trivial (light), 2 easy, 3 moderate (barrier), 4 hard (spatial), 5 extreme (massive effect).',
         'Higher difficulty = more symbols, less time, fewer mistakes, smaller tolerance.',
         'You may ONLY choose symbols from this list of ids, never invent new ones: ' + ids + '.',
@@ -42,7 +45,7 @@ async function viaCustom(user, system, api) {
     if (api.extra && api.extra.trim()) {
         try { extra = JSON.parse(api.extra); } catch { throw new Error('Дополнительные параметры: некорректный JSON'); }
     }
-    const body = { model: api.model || undefined, temperature: 0.3, max_tokens: 400, ...extra,
+    const body = { model: api.model || undefined, temperature: 0.3, max_tokens: 700, ...extra,
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
     const headers = { 'Content-Type': 'application/json' };
     if (api.key) headers.Authorization = 'Bearer ' + api.key;

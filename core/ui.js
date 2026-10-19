@@ -6,10 +6,10 @@ import { OUTCOME_RU } from './chat.js';
 import { DIFF_NAMES } from './difficulty.js';
 import { testConnection } from './api.js';
 import { getLibrary } from './symbols.js';
-import { play } from './fx.js';
+import { play, configure, unlock } from './fx.js';
 
 const $ = id => document.getElementById(id);
-let panel, game, params = null, result = null, view = 'main';
+let panel, game, params = null, result = null, view = 'main', lastKind = '';
 
 const TEMPLATE = `
 <button id="mc-fab" type="button" aria-label="Magic Casting">✦<span id="mc-badge"></span></button>
@@ -47,6 +47,7 @@ const TEMPLATE = `
           <span id="mc-g-time" class="mc-chip">⏱ —</span>
           <span id="mc-g-err" class="mc-chip">♥ —</span>
           <span id="mc-g-sym" class="mc-chip">Символ —</span>
+          <span id="mc-g-aura" class="mc-chip mc-aura-chip"></span>
         </div>
         <div class="mc-bar"><i id="mc-g-prog"></i></div>
       </div>
@@ -115,6 +116,8 @@ const FIELDS = [
     { k: 'includeSpell', l: 'Сохранять исходное описание заклинания', t: 'check' },
     { h: 'Эффекты' },
     { k: 'sound', l: 'Звуковые эффекты', t: 'check' },
+    { k: 'soundVolume', l: 'Громкость звука', t: 'range', min: 0, max: 1, step: 0.05 },
+    { k: 'shake', l: 'Дрожание в конце символа', t: 'check' },
     { k: 'animations', l: 'Анимации', t: 'select', o: OPT.anim },
     { h: 'Нейросеть' },
     { k: 'offline', l: 'Режим без API', t: 'check' },
@@ -163,6 +166,7 @@ function renderSettings() {
             setV(s, f.k, val);
             if (f.t === 'range') row.querySelector('output').textContent = val;
             saveSettings(); applyLook();
+            if (f.k === 'soundVolume') { clearTimeout(renderSettings.t); renderSettings.t = setTimeout(() => play('ok', s.sound), 140); }
         });
         body.append(row);
     }
@@ -175,7 +179,9 @@ function renderSettings() {
 
 function applyLook() {
     if (!panel) return;
-    panel.dataset.anim = getSettings().animations;
+    const s = getSettings();
+    panel.dataset.anim = s.animations;
+    configure(s.sound, s.soundVolume);
 }
 
 /* ---------- вспомогательное ---------- */
@@ -219,6 +225,7 @@ function renderHistory() {
 
 /* ---------- ход кастования ---------- */
 async function onStart() {
+    unlock();   // iOS/Safari: звук разрешается только внутри жеста
     const desc = $('mc-spell').value.trim();
     const notice = $('mc-notice');
     if (!desc) { notice.textContent = 'Введите название или описание заклинания.'; return; }
@@ -238,6 +245,12 @@ function launch(notice) {
     $('mc-g-name').textContent = params.spell_name;
     $('mc-g-pips').innerHTML = pips(params.difficulty);
     $('mc-g-pips').title = DIFF_NAMES[params.difficulty];
+    const au = params.aura;
+    if (au) {
+        au.colors.forEach((c, i) => panel.style.setProperty('--mc-a' + (i + 1), c));
+        const ch = $('mc-g-aura');
+        ch.textContent = 'Аура: ' + au.label; ch.style.borderColor = au.colors[0] + '99'; ch.style.color = au.colors[0];
+    }
     $('mc-g-msg').textContent = params.complexity_reason || (notice ? notice : 'Проведите пальцем по линии от отмеченной точки.');
     $('mc-g-msg').className = 'mc-msg';
     $('mc-g-prog').style.width = '0%';
@@ -264,16 +277,16 @@ function callbacks() {
         },
         onFeedback: f => {
             const m = $('mc-g-msg'); m.textContent = f.text; m.className = 'mc-msg ' + (f.ok ? 'ok' : 'bad');
-            play(f.ok ? 'ok' : 'bad', s().sound);
             if (!f.ok && s().animations !== 'off' && navigator.vibrate) navigator.vibrate(50);
         },
-        onSymbolDone: () => { play('ok', s().sound); $('mc-g-prog').style.width = '100%'; },
+        onSymbolDone: () => { $('mc-g-prog').style.width = '100%'; },
         onFinish: g => {
+            lastKind = g.kind;
             const r = computeResult(params, params.desc, g);
             pushHistory(r);
             result = r;
             if (r.outcome === 'fail' && s().failBehavior === 'restart' && g.kind === 'failed') {
-                toast('Заклинание сорвалось — новая попытка'); play('lose', s().sound);
+                toast('Заклинание сорвалось — новая попытка');
                 setTimeout(() => game.restart(), 500); return;
             }
             showResult(r);
@@ -284,7 +297,8 @@ function callbacks() {
 function showResult(r) {
     const s = getSettings();
     setView('result');
-    play(r.outcome === 'full' || r.outcome === 'partial' ? 'win' : 'lose', s.sound);
+    if (r.outcome === 'full' || r.outcome === 'partial') play('win', s.sound);
+    else if (lastKind !== 'failed') play('lose', s.sound);   // при срыве звук уже сыграл движок
     panel.dataset.outcome = r.outcome;
     $('mc-r-title').textContent = OUTCOME_RU[r.outcome];
     $('mc-r-spell').textContent = r.spell;

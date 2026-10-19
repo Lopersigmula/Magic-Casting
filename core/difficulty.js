@@ -1,5 +1,6 @@
 // Пресеты сложности, валидация ответа ИИ и подбор символов.
 import { getLibrary, hasSymbol } from './symbols.js';
+import { buildAura } from './aura.js';
 
 export const PRESETS = {
     1: { symbol_count: 1, time_limit: 40, allowed_mistakes: 5, drawing_tolerance: 0.26, trace_speed: 0.8 },
@@ -30,7 +31,7 @@ export function pickSymbols(level, count, preferred = []) {
 }
 
 /** Собирает итоговые параметры из «сырого» ответа ИИ (или без него). Все значения ограничиваются. */
-export function buildParams(raw, s, { level, name, source }) {
+export function buildParams(raw, s, { level, name, source, desc }) {
     raw = raw && typeof raw === 'object' ? raw : {};
     const maxLvl = clamp(Math.round(s.maxDifficulty), 1, 5);
     const lvl = clamp(Math.round(num(level ?? raw.difficulty, s.defaultDifficulty)), 1, maxLvl);
@@ -54,6 +55,7 @@ export function buildParams(raw, s, { level, name, source }) {
         drawing_tolerance: clamp(num(r.drawing_tolerance, p.drawing_tolerance), 0.08, 0.35),
         trace_speed: clamp(num(r.trace_speed, p.trace_speed), 0.5, 2),
         complexity_reason: String(raw.complexity_reason || '').slice(0, 200),
+        aura: buildAura(raw.aura, desc || name, lvl),   // аура от ИИ (или подбор по ключевым словам)
         source,
     };
 }

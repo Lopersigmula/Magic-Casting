@@ -13,17 +13,17 @@ export async function prepare(desc, uiLevel) {
     const s = getSettings();
     const name = desc.length > 40 ? desc.slice(0, 38) + '…' : desc;
     const manual = uiLevel > 0 ? uiLevel : s.manualDifficulty;
-    if (manual > 0) return { params: buildParams(null, s, { level: manual, name, source: 'manual' }), notice: '' };
+    if (manual > 0) return { params: buildParams(null, s, { level: manual, name, source: 'manual', desc }), notice: '' };
     if (s.offline || !s.autoAnalyze) {
-        return { params: buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default' }),
+        return { params: buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default', desc }),
             notice: 'Анализ отключён — использована сложность по умолчанию.' };
     }
     try {
         const raw = await analyzeSpell(desc);
-        return { params: buildParams(raw, s, { name, source: 'ai' }), notice: '' };
+        return { params: buildParams(raw, s, { name, source: 'ai', desc }), notice: '' };
     } catch (e) {
         console.warn('[Magic Casting] анализ не удался:', e && e.message);
-        return { params: buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default' }),
+        return { params: buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default', desc }),
             notice: 'Нейросеть недоступна или ответила некорректно — сложность по умолчанию. Выберите уровень вручную, если нужно.' };
     }
 }
@@ -31,7 +31,7 @@ export async function prepare(desc, uiLevel) {
 export function buildSession(params) {
     const s = getSettings();
     return { params, symbols: params.symbols.map(getSymbol).filter(Boolean),
-        opts: { anim: s.animations, strictness: s.strictness } };
+        opts: { anim: s.animations, strictness: s.strictness, shake: s.shake } };
 }
 
 /** Итог рассчитывает только движок — по фактическим данным мини-игры. */
