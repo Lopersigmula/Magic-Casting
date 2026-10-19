@@ -1,0 +1,134 @@
+/* Magic Casting — мобильные стили (портретная ориентация в приоритете) */
+#mc-fab {
+    position: fixed; right: 14px; bottom: 96px; z-index: 9998;
+    width: 52px; height: 52px; border-radius: 50%; border: 1px solid #5ee7ff88;
+    background: radial-gradient(circle at 35% 30%, #3b2f7a, #0b1030 70%); color: #bff6ff;
+    font-size: 24px; line-height: 1; cursor: pointer; padding: 0;
+    box-shadow: 0 0 18px #5ee7ff55, inset 0 0 10px #a78bfa44;
+    -webkit-tap-highlight-color: transparent;
+}
+#mc-badge { display: none; position: absolute; top: 4px; right: 4px; width: 12px; height: 12px; border-radius: 50%; background: #ff5d73; box-shadow: 0 0 8px #ff5d73; }
+#mc-badge.on { display: block; }
+
+html.mc-lock { overflow: hidden !important; overscroll-behavior: none; }
+
+#mc-panel {
+    position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center;
+    background-color: #060919 !important;
+    background-image:
+        radial-gradient(1.5px 1.5px at 12% 18%, #bff6ff 50%, transparent 51%),
+        radial-gradient(1px 1px at 78% 12%, #fff 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 64% 38%, #a78bfa 50%, transparent 51%),
+        radial-gradient(1px 1px at 28% 52%, #fff 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 88% 66%, #5ee7ff 50%, transparent 51%),
+        radial-gradient(1px 1px at 40% 82%, #fff 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 8% 90%, #a78bfa 50%, transparent 51%),
+        radial-gradient(90% 60% at 85% 0%, #3a1f8a 0%, transparent 60%),
+        radial-gradient(80% 60% at 0% 100%, #0b4b6b 0%, transparent 60%),
+        linear-gradient(180deg, #120d3a 0%, #070a1e 55%, #03050f 100%) !important;
+    color: #dbe6ff; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px; box-sizing: border-box; overscroll-behavior: contain;
+}
+#mc-panel *, #mc-panel *::before, #mc-panel *::after { box-sizing: border-box; }
+#mc-panel.mc-hidden { display: none; }
+.mc-shell {
+    position: relative; display: flex; flex-direction: column; width: 100%; max-width: 560px;
+    height: 100%; height: 100dvh; min-height: 0; overflow-x: hidden;
+    padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+    background-color: #0b1238 !important;   /* непрозрачный тёмно-синий фон */
+    background-image: radial-gradient(120% 60% at 50% 0%, #243088 0%, #121b5c 35%, #0a1134 70%, #060b25 100%) !important;
+}
+.mc-shell::before {  /* тонкая светящаяся рамка */
+    content: ""; position: absolute; inset: 6px; border: 1px solid #5ee7ff2e; border-radius: 16px;
+    box-shadow: inset 0 0 30px #a78bfa1f; pointer-events: none;
+}
+@media (min-width: 700px) {
+    #mc-panel { background-color: #02040c !important; background-image: none !important; align-items: center; }
+    .mc-shell { height: min(100dvh - 32px, 880px); border-radius: 16px; box-shadow: 0 0 40px #a78bfa33; }
+}
+
+.mc-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 10px 2px; border-bottom: 1px solid #5ee7ff22; flex: none; }
+.mc-title { font-family: 'Palatino Linotype', Palatino, Georgia, serif; font-size: 20px; letter-spacing: .04em; color: #bff6ff; text-shadow: 0 0 12px #5ee7ff88; }
+.mc-head-btns { display: flex; gap: 8px; }
+.mc-head-btns button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid #a78bfa55; background: #12183a; color: #cfd9ff; font-size: 20px; cursor: pointer; }
+
+.mc-view { position: relative; z-index: 1; display: none; flex-direction: column; gap: 10px; flex: 1; min-height: 0; padding: 12px 0; overflow-y: auto; overflow-x: hidden; }
+#mc-panel[data-view="main"] .mc-view[data-view="main"],
+#mc-panel[data-view="game"] .mc-view[data-view="game"],
+#mc-panel[data-view="result"] .mc-view[data-view="result"],
+#mc-panel[data-view="settings"] .mc-view[data-view="settings"] { display: flex; }
+.mc-view[data-view="game"] { overflow: hidden; padding-bottom: 6px; touch-action: none; }
+
+#mc-panel textarea, #mc-panel select, #mc-panel input[type="text"], #mc-panel input[type="number"], #mc-panel input[type="password"] {
+    width: 100%; max-width: 100%; background: #0c1130; color: #e6eeff; border: 1px solid #5ee7ff44;
+    border-radius: 10px; padding: 12px; font: inherit; font-size: 16px; /* 16px — без автозума iOS */
+}
+#mc-panel textarea:focus, #mc-panel select:focus, #mc-panel input:focus { outline: 2px solid #a78bfa; outline-offset: 1px; }
+.mc-label, .mc-sub { color: #9fb3ea; font-size: 14px; }
+.mc-sub { margin-top: 6px; padding-top: 10px; border-top: 1px solid #5ee7ff1f; color: #8fe9ff; }
+.mc-row { display: flex; align-items: center; gap: 10px; }
+.mc-row select { flex: 1; }
+
+#mc-panel button { font: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.mc-primary, .mc-ghost { min-height: 50px; border-radius: 12px; padding: 0 16px; cursor: pointer; font-size: 17px; }
+.mc-primary { border: 1px solid #5ee7ff; background: linear-gradient(135deg, #3f2d97, #137a9c); color: #fff; box-shadow: 0 0 18px #5ee7ff44; }
+.mc-primary:disabled { opacity: .55; }
+.mc-ghost { border: 1px solid #a78bfa66; background: #10163a; color: #d4dcff; }
+.mc-notice { min-height: 1em; font-size: 14px; color: #ffd48a; }
+.mc-empty { color: #7f8fb8; font-size: 14px; list-style: none; }
+
+.mc-history { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mc-history li { list-style: none; display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid #5ee7ff22; border-left-width: 3px; border-radius: 10px; background: #0b102b; cursor: pointer; }
+.mc-history .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-history .r { flex: none; font-size: 13px; color: #9fb3ea; }
+.mc-h-full { border-left-color: #2dd4bf !important; } .mc-h-partial { border-left-color: #ffc45e !important; }
+.mc-h-fail { border-left-color: #ff5d73 !important; } .mc-h-interrupted { border-left-color: #7f8fb8 !important; }
+
+/* Игра */
+.mc-hud { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.mc-hud-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mc-g-name { font-family: 'Palatino Linotype', Georgia, serif; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #bff6ff; }
+.mc-pips { display: flex; gap: 4px; flex: none; }
+.mc-pips i { width: 12px; height: 12px; transform: rotate(45deg); border: 1px solid #a78bfa; background: transparent; }
+.mc-pips i.on { background: #a78bfa; box-shadow: 0 0 8px #a78bfa; }
+.mc-hud-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.mc-chip { padding: 5px 10px; border-radius: 999px; border: 1px solid #5ee7ff33; background: #0b102b; font-size: 14px; }
+.mc-chip.warn { border-color: #ff5d73; color: #ff9aa9; }
+.mc-bar { height: 6px; border-radius: 6px; background: #12183a; overflow: hidden; }
+.mc-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a78bfa, #5ee7ff); transition: width .1s linear; }
+.mc-stage { position: relative; flex: 1; min-height: 0; border: 1px solid #5ee7ff22; border-radius: 14px; background: radial-gradient(circle at 50% 50%, #0f1640 0%, #060918 80%); overflow: hidden; touch-action: none; }
+#mc-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mc-msg { flex: none; min-height: 2.6em; text-align: center; font-size: 15px; color: #9fb3ea; }
+.mc-msg.ok { color: #6ff2dc; } .mc-msg.bad { color: #ff9aa9; }
+.mc-foot { flex: none; display: flex; gap: 10px; }
+.mc-foot .mc-ghost { flex: 1; }
+
+/* Результат */
+.mc-r-title { font-family: 'Palatino Linotype', Georgia, serif; font-size: 28px; text-align: center; margin-top: 6px; }
+.mc-r-spell { text-align: center; color: #9fb3ea; }
+#mc-panel[data-outcome="full"] .mc-r-title { color: #6ff2dc; text-shadow: 0 0 18px #2dd4bf; }
+#mc-panel[data-outcome="partial"] .mc-r-title { color: #ffc45e; text-shadow: 0 0 14px #ffc45e88; }
+#mc-panel[data-outcome="fail"] .mc-r-title { color: #ff7d90; }
+#mc-panel[data-outcome="interrupted"] .mc-r-title { color: #9fb3ea; }
+.mc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mc-stats div { text-align: center; padding: 10px 2px; border: 1px solid #5ee7ff22; border-radius: 10px; background: #0b102b; }
+.mc-stats b { display: block; font-size: 18px; } .mc-stats small { color: #8d9fd0; font-size: 12px; }
+#mc-r-text { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px !important; }
+.mc-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* Настройки */
+.mc-set { display: flex; flex-direction: column; gap: 10px; }
+.mc-field { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.mc-field.mc-check { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.mc-field.mc-check input { width: 26px; height: 26px; flex: none; accent-color: #a78bfa; }
+.mc-field input[type="range"] { width: 100%; accent-color: #5ee7ff; height: 32px; }
+.mc-field output { color: #5ee7ff; }
+
+#mc-toast { position: absolute; left: 12px; right: 12px; bottom: 90px; padding: 10px 14px; border-radius: 10px; background: #1a1f4d; border: 1px solid #a78bfa; text-align: center; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .25s; }
+#mc-toast.show { opacity: 1; }
+
+#mc-panel[data-anim="off"] *, #mc-panel[data-anim="off"] *::before { transition: none !important; animation: none !important; }
+#mc-panel[data-anim="off"] .mc-primary, #mc-panel[data-anim="off"] .mc-title, #mc-panel[data-anim="off"] #mc-fab { box-shadow: none; text-shadow: none; }
+#mc-panel[data-anim="reduced"] .mc-primary, #mc-panel[data-anim="reduced"] .mc-title { box-shadow: none; text-shadow: none; }
+@media (prefers-reduced-motion: reduce) { #mc-panel *, #mc-toast { transition: none !important; animation: none !important; } }
+@media (max-height: 560px) { .mc-r-title { font-size: 22px; } .mc-msg { min-height: 1.6em; } }
