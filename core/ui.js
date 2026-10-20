@@ -7,6 +7,8 @@ import { DIFF_NAMES } from './difficulty.js';
 import { testConnection } from './api.js';
 import { getLibrary } from './symbols.js';
 import { play, configure, unlock } from './fx.js';
+import { getContext } from './st.js';
+import { awardXp, getLevelState, perksText, resetLevel, setLevel, levelEnabled, MAX_LEVEL } from './level.js';
 
 const $ = id => document.getElementById(id);
 let panel, game, params = null, result = null, view = 'main', lastKind = '';
@@ -36,6 +38,12 @@ const TEMPLATE = `
       </div>
       <button id="mc-start" class="mc-primary" type="button">Начать кастование</button>
       <div id="mc-notice" class="mc-notice"></div>
+      <div id="mc-level" class="mc-level">
+        <div class="mc-lv-top"><span id="mc-lv-num" class="mc-lv-num"></span><span id="mc-lv-rank" class="mc-lv-rank"></span></div>
+        <div class="mc-lv-bar"><i id="mc-lv-bar"></i></div>
+        <div id="mc-lv-xp" class="mc-lv-xp"></div>
+        <div id="mc-lv-perks" class="mc-lv-perks"></div>
+      </div>
       <div class="mc-sub">Недавние заклинания</div>
       <ul id="mc-history" class="mc-history"></ul>
     </section>
@@ -69,6 +77,7 @@ const TEMPLATE = `
         <div><b id="mc-r-diff"></b><small>сложность</small></div>
       </div>
       <div id="mc-r-extra" class="mc-notice"></div>
+      <div id="mc-r-level" class="mc-levelup"></div>
       <textarea id="mc-r-text" rows="8"></textarea>
       <div id="mc-r-status" class="mc-notice"></div>
       <div class="mc-actions">
@@ -101,6 +110,9 @@ const FIELDS = [
     { k: 'manualDifficulty', l: 'Ручной выбор сложности (0 = авто)', t: 'range', min: 0, max: 5, step: 1 },
     { k: 'strictness', l: 'Строгость распознавания', t: 'range', min: 0.6, max: 1.6, step: 0.05 },
     { k: 'extraMistakes', l: 'Поправка к числу допустимых ошибок', t: 'range', min: -2, max: 4, step: 1 },
+    { k: 'levelEnabled', l: 'Система уровней (отдельно для каждого чата)', t: 'check' },
+    { setLevelRow: true },
+    { resetLevel: true },
     { k: 'timerEnabled', l: 'Включить таймер', t: 'check' },
     { k: 'minTime', l: 'Минимальное время, с', t: 'number', min: 3, max: 120 },
     { k: 'maxTime', l: 'Максимальное время, с', t: 'number', min: 5, max: 300 },
@@ -112,8 +124,6 @@ const FIELDS = [
     { h: 'Чат' },
     { k: 'autoSend', l: 'Отправка результата', t: 'select', o: OPT.send },
     { k: 'sendMode', l: 'Способ отправки', t: 'select', o: OPT.mode },
-    { k: 'addNote', l: 'Краткое описание результата для ролевой игры', t: 'check' },
-    { k: 'includeSpell', l: 'Сохранять исходное описание заклинания', t: 'check' },
     { h: 'Эффекты' },
     { k: 'sound', l: 'Звуковые эффекты', t: 'check' },
     { k: 'soundVolume', l: 'Громкость звука', t: 'range', min: 0, max: 1, step: 0.05 },
@@ -137,6 +147,27 @@ function renderSettings() {
     body.innerHTML = '';
     for (const f of FIELDS) {
         if (f.h) { body.insertAdjacentHTML('beforeend', `<div class="mc-sub">${f.h}</div>`); continue; }
+        if (f.setLevelRow) {
+            const L = getLevelState();
+            const row = document.createElement('label'); row.className = 'mc-field';
+            row.innerHTML = `<span>Мой уровень в этом чате <o>${L.level}</o></span>`;
+            const inp = document.createElement('input');
+            inp.type = 'range'; inp.min = 1; inp.max = MAX_LEVEL; inp.step = 1; inp.value = L.level;
+            inp.addEventListener('input', () => { row.querySelector('o').textContent = inp.value; });
+            inp.addEventListener('change', () => {
+                if (!setLevel(+inp.value)) {
+                    toast('Откройте чат, чтобы изменить его уровень');
+                    inp.value = row.querySelector('o').textContent = getLevelState().level; return;
+                }
+                renderLevel(); toast('Уровень: ' + inp.value);
+            });
+            row.append(inp); body.append(row);
+            continue;
+        }
+        if (f.resetLevel) {
+            body.insertAdjacentHTML('beforeend', '<button id="mc-reset-lv" class="mc-ghost" type="button">Сбросить уровень этого чата</button>');
+            continue;
+        }
         if (f.test) {
             body.insertAdjacentHTML('beforeend', '<button id="mc-test" class="mc-ghost" type="button">Проверить подключение</button><div id="mc-test-res" class="mc-notice"></div>');
             continue;
@@ -170,6 +201,16 @@ function renderSettings() {
         });
         body.append(row);
     }
+    const rb = $('mc-reset-lv');
+    rb.addEventListener('click', () => {
+        if (!getLevelState().hasChat) { toast('Откройте чат, чтобы сбросить его уровень'); return; }
+        if (rb.dataset.arm !== '1') {
+            rb.dataset.arm = '1'; rb.textContent = 'Нажмите ещё раз — уровень чата обнулится';
+            setTimeout(() => { rb.dataset.arm = ''; rb.textContent = 'Сбросить уровень этого чата'; }, 4000);
+            return;
+        }
+        resetLevel(); rb.dataset.arm = ''; rb.textContent = 'Сбросить уровень этого чата'; toast('Уровень чата сброшен');
+    });
     $('mc-test').addEventListener('click', async () => {
         const out = $('mc-test-res'); out.textContent = 'Проверяю…';
         try { out.textContent = '✓ Подключение работает. Ответ: ' + await testConnection(); }
@@ -199,7 +240,7 @@ export function openPanel() {
     panel.classList.remove('mc-hidden');
     document.documentElement.classList.add('mc-lock');
     $('mc-badge').classList.remove('on');
-    if (view === 'main') renderHistory();
+    if (view === 'main') renderMain();
     if (gameActive()) { game.setPaused(false); game.resize(); }
 }
 function hidePanel() {
@@ -207,6 +248,22 @@ function hidePanel() {
     panel.classList.add('mc-hidden');
     document.documentElement.classList.remove('mc-lock');
     if (gameActive()) { game.setPaused(true); $('mc-badge').classList.add('on'); }
+}
+
+function renderMain() { renderLevel(); renderHistory(); }
+
+function renderLevel() {
+    const box = $('mc-level');
+    if (!box) return;
+    box.style.display = levelEnabled() ? '' : 'none';
+    if (!levelEnabled()) return;
+    const L = getLevelState();
+    $('mc-lv-num').textContent = 'Уровень ' + L.level + (L.max ? ' (макс.)' : '');
+    $('mc-lv-rank').textContent = L.rank;
+    $('mc-lv-bar').style.width = Math.round(L.progress * 100) + '%';
+    $('mc-lv-xp').textContent = !L.hasChat ? 'Откройте чат — уровень копится отдельно в каждом чате'
+        : L.max ? 'Опыт: ' + L.xp : `Опыт: ${L.inLevel} / ${L.need}`;
+    $('mc-lv-perks').textContent = perksText(L.level);
 }
 
 function renderHistory() {
@@ -283,6 +340,7 @@ function callbacks() {
         onFinish: g => {
             lastKind = g.kind;
             const r = computeResult(params, params.desc, g);
+            r.lvl = awardXp(r);
             pushHistory(r);
             result = r;
             if (r.outcome === 'fail' && s().failBehavior === 'restart' && g.kind === 'failed') {
@@ -313,6 +371,11 @@ function showResult(r) {
     if (r.side) bits.push('эффект: ' + r.side);
     if (r.backfire) bits.push('заклинание схлопнулось в последний миг');
     $('mc-r-extra').textContent = bits.join(' · ');
+    const lv = r.lvl, lb = $('mc-r-level');
+    lb.className = 'mc-levelup' + (lv && lv.levelUp ? ' up' : '');
+    lb.textContent = !lv || !lv.active ? '' : lv.levelUp ? `✦ +${lv.gain} опыта · Уровень ${lv.before} → ${lv.after}!`
+        : lv.gain ? `+${lv.gain} опыта` : '';
+    renderLevel();
     const ta = $('mc-r-text'), st = $('mc-r-status');
     st.textContent = '';
     ta.value = buildMessage(r);
@@ -353,14 +416,18 @@ export function initUI() {
         if (view === 'settings') { setView('main'); return; }
         renderSettings(); setView('settings');
     });
-    $('mc-set-back').addEventListener('click', () => { setView('main'); renderHistory(); });
+    $('mc-set-back').addEventListener('click', () => { setView('main'); renderMain(); });
     $('mc-start').addEventListener('click', onStart);
     $('mc-g-cancel').addEventListener('click', () => game.cancel());
     $('mc-g-restart').addEventListener('click', () => { game.restart(); $('mc-g-msg').textContent = 'Новая попытка.'; });
     $('mc-r-send').addEventListener('click', doSend);
     $('mc-r-retry').addEventListener('click', () => { setView('game'); requestAnimationFrame(() => game.restart()); });
-    $('mc-r-new').addEventListener('click', () => { setView('main'); renderHistory(); });
+    $('mc-r-new').addEventListener('click', () => { setView('main'); renderMain(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.classList.contains('mc-hidden')) hidePanel(); });
-    renderHistory();
+    renderMain();
+    try {   // уровень привязан к чату: обновляем показ при смене чата
+        const ctx = getContext();
+        ctx.eventSource?.on(ctx.eventTypes.CHAT_CHANGED, () => renderMain());
+    } catch (e) { console.warn('[Magic Casting] не удалось подписаться на смену чата', e); }
     console.log(`[Magic Casting] загружено, символов: ${getLibrary().length}`);
 }

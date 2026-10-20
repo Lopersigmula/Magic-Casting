@@ -17,12 +17,12 @@ export const DEFAULTS = {
     affectBackfire: false,
     autoSend: 'preview',        // auto | preview | manual
     sendMode: 'inject',         // inject | send | send_gen | insert
-    addNote: true,
-    includeSpell: true,
     sound: true,
     soundVolume: 0.7,
     shake: true,                // дрожание в конце символа
     animations: 'full',         // full | reduced | off
+    levelEnabled: true,         // система уровней (опыт отдельно для каждого чата)
+    levelsByChat: {},           // запасное хранилище, если у чата нет метаданных
     offline: false,
     autoAnalyze: true,
     api: { mode: 'st', url: '', key: '', model: '', extra: '' },

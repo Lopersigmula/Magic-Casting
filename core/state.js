@@ -3,7 +3,8 @@ import { getSettings, saveSettings } from './settings.js';
 import { getSymbol } from './symbols.js';
 import { analyzeSpell } from './api.js';
 import { buildParams } from './difficulty.js';
-import { formatResult, formatInject, sendToChat } from './chat.js';
+import { formatResult, sendToChat } from './chat.js';
+import { applyLevel } from './level.js';
 
 export const FULL_ACC = 0.72;     // порог полного успеха
 export const PARTIAL_ACC = 0.40;  // порог частичного успеха
@@ -13,17 +14,17 @@ export async function prepare(desc, uiLevel) {
     const s = getSettings();
     const name = desc.length > 40 ? desc.slice(0, 38) + '…' : desc;
     const manual = uiLevel > 0 ? uiLevel : s.manualDifficulty;
-    if (manual > 0) return { params: buildParams(null, s, { level: manual, name, source: 'manual', desc }), notice: '' };
+    if (manual > 0) return { params: applyLevel(buildParams(null, s, { level: manual, name, source: 'manual', desc })), notice: '' };
     if (s.offline || !s.autoAnalyze) {
-        return { params: buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default', desc }),
+        return { params: applyLevel(buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default', desc })),
             notice: 'Анализ отключён — использована сложность по умолчанию.' };
     }
     try {
         const raw = await analyzeSpell(desc);
-        return { params: buildParams(raw, s, { name, source: 'ai', desc }), notice: '' };
+        return { params: applyLevel(buildParams(raw, s, { name, source: 'ai', desc })), notice: '' };
     } catch (e) {
         console.warn('[Magic Casting] анализ не удался:', e && e.message);
-        return { params: buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default', desc }),
+        return { params: applyLevel(buildParams(null, s, { level: s.defaultDifficulty, name, source: 'default', desc })),
             notice: 'Нейросеть недоступна или ответила некорректно — сложность по умолчанию. Выберите уровень вручную, если нужно.' };
     }
 }
@@ -31,7 +32,7 @@ export async function prepare(desc, uiLevel) {
 export function buildSession(params) {
     const s = getSettings();
     return { params, symbols: params.symbols.map(getSymbol).filter(Boolean),
-        opts: { anim: s.animations, strictness: s.strictness, shake: s.shake } };
+        opts: { anim: s.animations, strictness: s.strictness, shake: s.shake, tierEase: params.tier_ease || 0 } };
 }
 
 /** Итог рассчитывает только движок — по фактическим данным мини-игры. */
@@ -81,9 +82,7 @@ export function pushHistory(r) {
 }
 
 export function buildMessage(r) {
-    const s = getSettings();
-    const inc = !wasDescSent(r.desc);
-    return s.sendMode === 'inject' ? formatInject(r, s, inc) : formatResult(r, s, inc);   // описание заклинания не дублируем
+    return formatResult(r);   // один формат для всех способов отправки
 }
 
 export async function sendResult(r, text) {

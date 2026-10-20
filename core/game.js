@@ -164,7 +164,7 @@ export class Game {
         const trail = this.trail; this.trail = []; this.segs = [];
         if (trail.length < 5 || pathLength(trail) < 0.05) return;   // случайное касание — не ошибка
         const sym = this.sym, stroke = sym.strokes[this.strokeIdx], p = this.session.params;
-        const res = evaluateStroke(trail, stroke.prep, { tol: p.drawing_tolerance, strictness: this.session.opts.strictness, tolMul: sym.tolMul });
+        const res = evaluateStroke(trail, stroke.prep, { tol: p.drawing_tolerance, strictness: this.session.opts.strictness, tolMul: (sym.tolMul || 1) * (1 + (this.session.opts.tierEase || 0) * ((sym.tier || 1) - 1) / 4) });
         if (res.ok) {
             this.strokeAcc.push(res.accuracy);
             this.done.push(trail);

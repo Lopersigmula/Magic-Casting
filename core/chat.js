@@ -3,35 +3,25 @@ import { getContext } from './st.js';
 
 export const OUTCOME_EN = { full: 'Full Success', partial: 'Partial Success', fail: 'Failure', interrupted: 'Interrupted' };
 export const OUTCOME_RU = { full: 'Полный успех', partial: 'Частичный успех', fail: 'Неудача', interrupted: 'Прерывание' };
-const NOTE = {
-    full: 'The caster completed the spell cleanly; it takes full effect.',
-    partial: 'The spell was completed but flawed; its effect is weaker or imperfect.',
-    fail: 'The casting failed; the spell does not take effect.',
-    interrupted: 'The caster broke off the casting; the spell is not completed.',
-};
-
-/** Характеристики результата (английский — для нейросети, ведущей игру). */
-function characteristics(r, s, includeSpell) {
-    const L = [`Result: ${OUTCOME_EN[r.outcome]}`, `Difficulty: ${r.difficulty}/5`, `Accuracy: ${r.accuracy}%`,
-        `Errors: ${r.mistakes}`, `Casting Time: ${r.time.toFixed(1)} seconds`];
-    if (s.affectPower && (r.outcome === 'full' || r.outcome === 'partial')) L.push(`Spell Power: ${r.power}%`);
-    if (s.affectSide && r.effect) L.push(`Random Effect (${r.side}): ${r.effect}`);
-    if (r.backfire) L.push('Backfire: the spell collapsed at the last moment');
-    if (s.addNote) L.push('Note: ' + NOTE[r.outcome]);
-    if (includeSpell && s.includeSpell && r.desc) L.push('Original description: ' + r.desc);
+/** Единый формат результата (английский — для нейросети, ведущей игру). */
+function characteristics(r) {
+    const L = ['Result: ' + OUTCOME_EN[r.outcome], 'Difficulty: ' + r.difficulty + '/5', 'Accuracy: ' + r.accuracy + '%',
+        'Errors: ' + r.mistakes, 'Casting Time: ' + r.time.toFixed(1) + ' seconds', 'Spell Power: ' + r.power + '%'];
+    const note = [];
+    if (r.effect) note.push(`random effect${r.side ? ' (' + r.side + ')' : ''}: ${r.effect}`);
+    if (r.backfire) note.push('the spell collapsed at the last moment');
+    if (note.length) L.push('Note: ' + note.join('; '));
     return L;
 }
 
-/** > ⭐️ **Заклинание:** *Точность N%. Случайный эффект.* <span hidden system_note> */
-export function formatInject(r, s, includeSpell) {
-    const eff = s.affectSide && r.effect ? ` Случайный эффект: ${r.effect}.` : '';
-    return `> ⭐️ **${r.spell}:** *Точность ${r.accuracy}%.${eff}* <span style="display:none;">\n<system_note>\n${characteristics(r, s, includeSpell).join('\n')}\n</system_note>\n</span>`;
+/**
+ * > ⭐️ **Название:** *Сила заклинания: N%.* <span hidden system_note>
+ * Один и тот же вид для всех способов отправки.
+ */
+export function formatResult(r) {
+    return `> ⭐️ **${r.spell}:** *Сила заклинания: ${r.power}%.* <span style="display:none;">\n<system_note>\n${characteristics(r).join('\n')}\n</system_note>\n</span>`;
 }
-
-export function formatResult(r, s, includeSpell) {
-    const L = ['[Magic Casting Result]', `Spell: ${r.spell}`, ...characteristics(r, s, includeSpell)];
-    return L.join('\n');
-}
+export const formatInject = formatResult;
 
 const esc = t => t.replace(/\|/g, '\\|').replace(/\{\{/g, '{ {');
 
